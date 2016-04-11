@@ -9,6 +9,7 @@ e = tpeg.literal("end")
 mm = tpeg.sequence{b, m, e}
 
 print(mm)
+mm:disas()
 
 for i = 0,s:len() do
     print("-------------------")
