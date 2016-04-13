@@ -208,7 +208,7 @@ local function switchcall_(patterns, success, src, pos, newp, slen, cb)
                     return true, newp
                 end
             end
-        else -- tail recurse on last pattern
+        else -- be tail call/recursion friendly on last pattern
             stmnt = quote
                 return patt(src, pos, slen, cb)
             end
