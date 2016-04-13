@@ -198,11 +198,19 @@ end
 -- like listcall_, but matches as soon as it finds a matching subpattern
 local function switchcall_(patterns, success, src, pos, newp, slen, cb)
     local stmts = terralib.newlist()
-    for _, patt in ipairs(patterns) do
-        local stmnt = quote
-            success, newp = patt(src, pos, slen, cb)
-            if success then
-                return true, newp
+    local npatts = #patterns
+    for idx, patt in ipairs(patterns) do
+        local stmnt
+        if idx < npatts then
+            stmnt = quote
+                success, newp = patt(src, pos, slen, cb)
+                if success then
+                    return true, newp
+                end
+            end
+        else -- tail recurse on last pattern
+            stmnt = quote
+                return patt(src, pos, slen, cb)
             end
         end
         stmts:insert(stmnt)
@@ -216,7 +224,6 @@ function terrapeg.choice(patterns)
         var success: bool = true
         var newp: int = 0
         [switchcall_(patterns, success, src, pos, newp, slen, cbuff)]
-        return false, pos -- no pattern matched
     end
     return choice_
 end
