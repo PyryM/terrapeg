@@ -1,11 +1,12 @@
 tpeg = require('terrapeg')
 
-s = "abeginmidmidmidend"
+s = "abecbebebeccbebed"
 
-b = tpeg.literal("begin")
-m = tpeg.min_reps(tpeg.literal("mid"), 0)
+b = tpeg.literal("a")
+m = tpeg.min_reps(tpeg.choice{tpeg.literal("be"),
+                              tpeg.literal("c")}, 1)
 mc = tpeg.capture(m, 23)
-e = tpeg.literal("end")
+e = tpeg.literal("d")
 
 mm = tpeg.sequence{b, mc, e}
 

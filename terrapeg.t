@@ -105,11 +105,13 @@ function terrapeg.min_reps(patt, minmatches)
     return min_reps_
 end
 
+-- helper function to create a list of terra statements (quotes) that
+-- try to match the sequence of all patterns
 local function listcall_(patterns, success, src, pos, oldp, slen, cb)
     local stmts = terralib.newlist()
-    for _,v in ipairs(patterns) do
+    for _, patt in ipairs(patterns) do
         local stmnt = quote
-            success, pos = v(src, pos, slen, cb)
+            success, pos = patt(src, pos, slen, cb)
             if not success then
                 return false, oldp
             end
@@ -119,7 +121,7 @@ local function listcall_(patterns, success, src, pos, oldp, slen, cb)
     return stmts
 end
 
--- create a terra function that matches the given patterns in order
+-- create a terra function that matches the sequence of patterns in order
 function terrapeg.sequence(patterns)
     local terra sequence_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
         var oldpos: int = pos
@@ -128,6 +130,32 @@ function terrapeg.sequence(patterns)
         return true, pos
     end
     return sequence_
+end
+
+-- like listcall_, but matches as soon as it finds a matching subpattern
+local function switchcall_(patterns, success, src, pos, newp, slen, cb)
+    local stmts = terralib.newlist()
+    for _, patt in ipairs(patterns) do
+        local stmnt = quote
+            success, newp = patt(src, pos, slen, cb)
+            if success then
+                return true, newp
+            end
+        end
+        stmts:insert(stmnt)
+    end
+    return stmts
+end
+
+-- create a terra function that matches an "ordered choice" of patterns
+function terrapeg.choice(patterns)
+    local terra choice_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        var success: bool = true
+        var newp: int = 0
+        [switchcall_(patterns, success, src, pos, newp, slen, cbuff)]
+        return false, pos -- no pattern matched
+    end
+    return choice_
 end
 
 -- create a terra function that captures what it is enclosing
