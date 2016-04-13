@@ -1,6 +1,16 @@
 -- terrapeg.t
 --
 -- parsing expression grammars in terra
+-- metaprograms a recursive descent parser without packratting, so
+-- your grammar could very well have exponential runtime
+
+-- MIT license
+-- or alternatively you may use the revised Crowley license, in which
+-- "do whatever you want" is the whole of the license
+
+-- the resulting parser is a pure Terra function (ie, does not call into lua)
+-- which means you can freely pass it into C, or even save it as a .obj file to
+-- be imported by other native code
 
 local terrapeg = {}
 
