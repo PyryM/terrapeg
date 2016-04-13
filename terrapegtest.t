@@ -3,32 +3,24 @@ tpeg = require('terrapeg')
 -- lol unicode
 -- झ ञ ट ठ ड ढ ण त थ द ध न
 
-s = "abecbebeठbeccbebed"
+minus = tpeg.option(tpeg.literal("-"))
+digits = tpeg.min_reps(tpeg.byteset("0123456789"), 1)
+s_end = tpeg.stringend
 
-b = tpeg.literal("a")
-m = tpeg.min_reps(tpeg.choice{tpeg.literal("be"),
-                              tpeg.literal("c"),
-                              tpeg.literal("ठ")}, 1)
-mc = tpeg.capture(m, 23)
-e = tpeg.literal("d")
+patt = tpeg.choice{
+    tpeg.sequence{minus, digits, tpeg.literal("."), tpeg.option(digits), s_end},
+    tpeg.sequence{minus, digits, s_end}
+}
 
-mm = tpeg.sequence{b, mc, e}
-
-print(mm)
-mm:disas()
+print(patt)
+patt:disas()
 
 cb = tpeg.capturebuffer(100)
 
-for i = 0,s:len() do
-    print("-------------------")
+tests = {"23", "23.3", "0.5", "-1", "--1", "-12.5", "-12.", "-.3"}
+
+for _, s in ipairs(tests) do
     cb.cb.pos = 0
-    local ret = mm(terralib.cast(&uint8, s), i, s:len(), cb.cb)
-    print(ret._0)
-    print(ret._1)
-    if cb.cb.pos > 0 then
-        local p0 = cb.cb.buff[0].startpos
-        local p1 = cb.cb.buff[0].endpos
-        print(p0 .. " -> " .. p1)
-        print(s:sub(p0+1, p1))
-    end
+    local ret = patt(terralib.cast(&uint8, s), 0, s:len(), cb.cb)
+    print(s .. ": " .. tostring(ret._0))
 end

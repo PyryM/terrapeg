@@ -83,7 +83,27 @@ function terrapeg.literal(s)
     return literal_
 end
 
--- create a terra function that will match any exactly n characters
+-- create a terra function that matches a single byte in a set
+-- implemented in the naive (but space-saving) way of simply iterating
+function terrapeg.byteset(s)
+    local const_info = stringToConstant(s)
+    local const_str = const_info.tconst
+    local terra byteset_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        if slen - pos < 1 then -- not a single byte of space left
+            return false, pos
+        end
+        var srcval = src[pos]
+        for i = 0,[const_info.slen] do
+            if srcval == const_str[i] then
+                return true, pos+1
+            end
+        end
+        return false, pos
+    end
+    return byteset_
+end
+
+-- create a terra function that will match any exactly n *bytes*
 function terrapeg.any_n(n)
     local nn = n
     local terra any_n_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
@@ -167,6 +187,51 @@ function terrapeg.choice(patterns)
         return false, pos -- no pattern matched
     end
     return choice_
+end
+
+-- create a terra function that matches 0 or 1 repetitions of patt
+-- note that this always succeeds
+function terrapeg.option(patt)
+    local terra option_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        var success: bool
+        var npos: int
+        success, npos = patt(src, pos, slen, cbuff)
+        if success then
+            return success, npos
+        else
+            return true, pos
+        end
+    end
+    return option_
+end
+
+-- create a terra function that succeeds if patt fails, consuming no input
+function terrapeg.negation(patt)
+    local terra negation_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        var success, npos = patt(src, pos, slen, cbuff)
+        return not success, pos
+    end
+    return negation_
+end
+
+-- create a terra function that succeeds as patt, but consumes no input
+function terrapeg.test(patt)
+    local terra test_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        var success, _ = patt(src, pos, slen, cbuff)
+        return success, pos
+    end
+    return test_
+end
+
+-- a terra function that matches only at the end of a string
+terra terrapeg.stringend(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    return pos == slen, pos
+end
+
+-- a terra function that matches only at the beginning of a string
+-- (not strictly ever needed: just query at 0)
+terra terrapeg.stringstart(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    return pos == 0, pos
 end
 
 -- create a terra function that captures what it is enclosing
