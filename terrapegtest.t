@@ -3,7 +3,7 @@ tpeg = require('terrapeg')
 -- lol unicode
 -- झ ञ ट ठ ड ढ ण त थ द ध न
 
-minus = tpeg.option(tpeg.literal("-"))
+minus = tpeg.symbol()
 digits = tpeg.fast_byteset("0123456789")
 bare_number = tpeg.min_reps(digits, 1)
 s_end = tpeg.stringend
@@ -17,8 +17,9 @@ patt = tpeg.choice{
     tpeg.sequence{minus, bare_number, s_end}
 }
 
-print(patt)
-patt:disas()
+tpeg.define(minus, tpeg.option(tpeg.literal("-")))
+print(minus)
+minus:disas()
 
 cb = tpeg.capturebuffer(100)
 

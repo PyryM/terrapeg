@@ -62,6 +62,22 @@ local function stringToConstant(s)
     return {tstr = tstr, tconst = tconst, slen = s:len()}
 end
 
+-- create a 'symbol' (forward function declaration)
+-- terrapeg parsers are just compositions of functions, so mutually
+-- recursive symbols need to be forward declared
+function terrapeg.symbol()
+    local terra symbol_ :: {&uint8, int, int, &CB} -> {bool, int}
+    return symbol_
+end
+
+-- define a symbol
+-- needed because of quirks in terra syntax
+function terrapeg.define(symbol, patt)
+    terra symbol(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        return patt(src, pos, slen, cbuff)
+    end
+end
+
 -- create a terra function that pattern matches a literal
 function terrapeg.literal(s)
     local const_info = stringToConstant(s)
