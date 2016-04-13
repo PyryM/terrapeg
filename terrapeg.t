@@ -29,7 +29,8 @@ end
 
 -- copy and null terminate a string
 -- dest must have size at least n+1
-local terra strcpy_nt(src: &int8, dest: &int8, n: int)
+local terra strcpy_nt(rawsrc: &int8, dest: &uint8, n: int)
+    var src: &uint8 = [&uint8](rawsrc)
     for i = 0,n do
         dest[i] = src[i]
     end
@@ -55,7 +56,7 @@ end
 function terrapeg.literal(s)
     local const_info = stringToConstant(s)
     local const_str = const_info.tconst
-    local terra literal_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    local terra literal_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
         -- Square brackets in terra indicate an escape: the string length
         -- will be evaluated to a literal value as if it were a #define
         if slen - pos < [const_info.slen] then
@@ -75,7 +76,7 @@ end
 -- create a terra function that will match any exactly n characters
 function terrapeg.any_n(n)
     local nn = n
-    local terra any_n_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    local terra any_n_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
         if slen - pos < [nn] then
             return false, pos
         else
@@ -88,7 +89,7 @@ end
 -- create a terra function that matches minmatches or more repetitions
 -- of the given pattern
 function terrapeg.min_reps(patt, minmatches)
-    local terra min_reps_(src: &int8, pos: int, slen: int,  cbuff: &CB) : {bool, int}
+    local terra min_reps_(src: &uint8, pos: int, slen: int,  cbuff: &CB) : {bool, int}
         var p0 : int = pos -- save position in case we fail and need to revert
         var succeeded : bool = true
         var nsuccesses : int = -1 -- we always get one 'free' success
@@ -123,7 +124,7 @@ end
 
 -- create a terra function that matches the sequence of patterns in order
 function terrapeg.sequence(patterns)
-    local terra sequence_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    local terra sequence_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
         var oldpos: int = pos
         var success: bool = true
         [listcall_(patterns, success, src, pos, oldpos, slen, cbuff)]
@@ -149,7 +150,7 @@ end
 
 -- create a terra function that matches an "ordered choice" of patterns
 function terrapeg.choice(patterns)
-    local terra choice_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    local terra choice_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
         var success: bool = true
         var newp: int = 0
         [switchcall_(patterns, success, src, pos, newp, slen, cbuff)]
@@ -160,7 +161,7 @@ end
 
 -- create a terra function that captures what it is enclosing
 function terrapeg.capture(patt, id)
-    local terra cap_(src: &int8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+    local terra cap_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
         var oldcbpos = cbuff.pos
         var capturestart = pos
         var success: bool

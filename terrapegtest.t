@@ -1,10 +1,14 @@
 tpeg = require('terrapeg')
 
-s = "abecbebebeccbebed"
+-- lol unicode
+-- झ ञ ट ठ ड ढ ण त थ द ध न
+
+s = "abecbebeठbeccbebed"
 
 b = tpeg.literal("a")
 m = tpeg.min_reps(tpeg.choice{tpeg.literal("be"),
-                              tpeg.literal("c")}, 1)
+                              tpeg.literal("c"),
+                              tpeg.literal("ठ")}, 1)
 mc = tpeg.capture(m, 23)
 e = tpeg.literal("d")
 
@@ -18,7 +22,7 @@ cb = tpeg.capturebuffer(100)
 for i = 0,s:len() do
     print("-------------------")
     cb.cb.pos = 0
-    local ret = mm(s, i, s:len(), cb.cb)
+    local ret = mm(terralib.cast(&uint8, s), i, s:len(), cb.cb)
     print(ret._0)
     print(ret._1)
     if cb.cb.pos > 0 then
