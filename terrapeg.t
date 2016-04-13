@@ -50,7 +50,7 @@ end
 -- convert a string into a terra value (int8 array)
 local function stringToTerra(s)
     local n = s:len()
-    local ret = terralib.new(int8[n+1])
+    local ret = terralib.new(uint8[n+1])
     strcpy_nt(s, ret, n)
     return ret
 end
@@ -101,6 +101,38 @@ function terrapeg.byteset(s)
         return false, pos
     end
     return byteset_
+end
+
+-- convert a string into a constant lookup table
+local function stringToConstantLUT(s)
+    local tstr = stringToTerra(s)
+    local lut = terralib.new(uint8[256])
+    for i = 1,256 do
+        lut[i-1] = 0
+    end
+    for i = 1,s:len() do
+        lut[tstr[i-1]] = 1
+    end
+    local lutconst = terralib.constant(lut)
+    return {lut = lut, lutconst = lutconst}
+end
+
+-- match a single byte out of a set
+-- implemented by building a big (256 byte) lookup table
+function terrapeg.fast_byteset(s)
+    local const_info = stringToConstantLUT(s)
+    local const_lut = const_info.lutconst
+    local terra fastbyteset_(src: &uint8, pos: int, slen: int, cbuff: &CB) : {bool, int}
+        if slen - pos < 1 then -- not a single byte of space left
+            return false, pos
+        end
+        if const_lut[src[pos]] > 0 then
+            return true, pos+1
+        else
+            return false, pos
+        end
+    end
+    return fastbyteset_
 end
 
 -- create a terra function that will match any exactly n *bytes*

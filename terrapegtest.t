@@ -4,12 +4,17 @@ tpeg = require('terrapeg')
 -- झ ञ ट ठ ड ढ ण त थ द ध न
 
 minus = tpeg.option(tpeg.literal("-"))
-digits = tpeg.min_reps(tpeg.byteset("0123456789"), 1)
+digits = tpeg.fast_byteset("0123456789")
+bare_number = tpeg.min_reps(digits, 1)
 s_end = tpeg.stringend
+print(digits)
 
 patt = tpeg.choice{
-    tpeg.sequence{minus, digits, tpeg.literal("."), tpeg.option(digits), s_end},
-    tpeg.sequence{minus, digits, s_end}
+    tpeg.sequence{minus, bare_number,
+                  tpeg.literal("."),
+                  tpeg.option(bare_number),
+                  s_end},
+    tpeg.sequence{minus, bare_number, s_end}
 }
 
 print(patt)
