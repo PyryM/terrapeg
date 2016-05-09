@@ -15,9 +15,9 @@
 local terrapeg = {}
 
 struct terrapeg.CaptureEntry_t {
-    id: uint16;
-    startpos: uint16;
-    endpos: uint16;
+    id: uint32;
+    startpos: uint32;
+    endpos: uint32;
 }
 
 struct terrapeg.CaptureBuffer_t {
